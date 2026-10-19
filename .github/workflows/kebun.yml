@@ -1,0 +1,63 @@
+name: Lihat Kebunku Auto Commit
+
+on:
+  schedule:
+    # Runs every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kebun-bot
+  cancel-in-progress: false
+
+jobs:
+  auto_commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Update Kebun and Rotate Commit Author
+        run: |
+          # List of profiles: username | email | commit message
+          PROFILES=(
+            "bagussatoto|bagusbudisatoto2001@gmail.com|Penanaman Pohon"
+            "bagussatoto|bagusbudisatoto2001@gmail.com|Menanaman Jagung Di kebun Kita"
+            "bagussatoto|bagusbudisatoto2001@gmail.com|Bercocok Tanam"
+            "bagussatoto1|tegalsariromansa1@gmail.com|Menanaman kelapa Di kebun Kita"
+            "bagussatoto1|tegalsariromansa1@gmail.com|Menanaman lumut dulu"
+            "belajarqywok|belajarqywok@gmail.com|Menanaman Jagung Di kebun Kita"
+            "belajarqywok|belajarqywok@gmail.com|Bercocok Tanam"
+            "belajarqywok|belajarqywok@gmail.com|Penanaman Pohon"
+            "fdciabdul|abdulmuttaqin456@gmail.com|Ini kebun mang abdul"
+            "hendraaagil|hendraaagil@gmail.com|Ini kebun hendra"
+          )
+
+          # Pick a random profile from the list
+          RAND_IDX=$((RANDOM % ${#PROFILES[@]}))
+          SELECTED="${PROFILES[$RAND_IDX]}"
+
+          IFS='|' read -r USER_NAME USER_EMAIL COMMIT_MSG <<< "$SELECTED"
+
+          echo "Selected Author: $USER_NAME <$USER_EMAIL>"
+          echo "Commit Message : $COMMIT_MSG"
+
+          # Update README.md with current timestamp
+          date '+%Y-%m-%dT%H:%M:%SZ' > README.md
+
+          # Configure Git and push
+          git config user.name "$USER_NAME"
+          git config user.email "$USER_EMAIL"
+          git add README.md
+          git commit -m "$COMMIT_MSG"
+          git pull --rebase origin main
+          git push origin main
+
+      - name: Keepalive Workflow
+        uses: gautamkrishnar/keepalive-workflow@v2
+        if: always()
